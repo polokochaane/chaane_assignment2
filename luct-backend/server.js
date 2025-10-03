@@ -5,6 +5,8 @@ const bodyParser = require("body-parser");
 const pool = require("./config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const path = require("path");
+require("dotenv").config();
 
 // -------------------- APP SETUP --------------------
 const app = express();
@@ -12,7 +14,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // JWT Secret
-const JWT_SECRET = "secretkey"; // replace with process.env.JWT_SECRET in production
+const JWT_SECRET = process.env.JWT_SECRET || "secretkey";
 
 // -------------------- MIDDLEWARE --------------------
 function authenticateToken(req, res, next) {
@@ -161,6 +163,14 @@ app.get("/stats", authenticateToken, async (req, res) => {
   }
 });
 
+// -------------------- SERVE REACT FRONTEND --------------------
+// Make sure "build/" is inside luct-backend after running "npm run build" in frontend
+app.use(express.static(path.join(__dirname, "build")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
+
 // -------------------- START SERVER --------------------
-const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

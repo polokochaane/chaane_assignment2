@@ -2,10 +2,10 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const pool = require("./config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const path = require("path");
+const pool = require("./config/db");
 require("dotenv").config();
 
 // -------------------- APP SETUP --------------------
@@ -13,7 +13,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// JWT Secret
+// -------------------- CONFIG --------------------
 const JWT_SECRET = process.env.JWT_SECRET || "secretkey";
 
 // -------------------- MIDDLEWARE --------------------
@@ -38,7 +38,10 @@ app.post("/auth/register", async (req, res) => {
       "INSERT INTO users (username, password, role) VALUES ($1,$2,$3) RETURNING user_id",
       [username, hashed, role]
     );
-    res.json({ message: "User registered successfully", user_id: result.rows[0].user_id });
+    res.json({
+      message: "User registered successfully",
+      user_id: result.rows[0].user_id,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Registration failed" });
@@ -119,9 +122,10 @@ app.post("/reports", authenticateToken, async (req, res) => {
 app.get("/ratings/:reportId", authenticateToken, async (req, res) => {
   try {
     const { reportId } = req.params;
-    const result = await pool.query("SELECT * FROM ratings WHERE report_id=$1 ORDER BY rating_id DESC", [
-      reportId,
-    ]);
+    const result = await pool.query(
+      "SELECT * FROM ratings WHERE report_id=$1 ORDER BY rating_id DESC",
+      [reportId]
+    );
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -155,7 +159,7 @@ app.get("/stats", authenticateToken, async (req, res) => {
       users: parseInt(users.rows[0].count),
       reports: parseInt(reports.rows[0].count),
       ratings: parseInt(ratings.rows[0].count),
-      courses: 10, // placeholder
+      courses: 10,
     });
   } catch (err) {
     console.error(err);
@@ -164,11 +168,10 @@ app.get("/stats", authenticateToken, async (req, res) => {
 });
 
 // -------------------- SERVE REACT FRONTEND --------------------
-// Make sure "build/" is inside luct-backend after running "npm run build" in frontend
-app.use(express.static(path.join(__dirname, "build")));
+app.use(express.static(path.join(__dirname, "../assignment2/build")));
 
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
+  res.sendFile(path.join(__dirname, "../assignment2/build", "index.html"));
 });
 
 // -------------------- START SERVER --------------------
